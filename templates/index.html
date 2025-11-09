@@ -1,0 +1,363 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>推しDB</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 2em;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f4f4f4;
+        }
+
+        input[type="text"], input[type="url"] {
+            width: 300px;
+            padding: 5px;
+        }
+
+        #search-input {
+            width: 100%;
+            padding: 10px;
+            font-size: 1.2em;
+            margin-bottom: 1em;
+        }
+
+        /* URLが長い場合に折り返す */
+        .url-link {
+            word-break: break-all;
+        }
+
+        /* ソート可能なテーブルヘッダー */
+        th[data-sort-key] {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        /* ソート矢印 */
+        .sort-arrow {
+            display: inline-block;
+            width: 0;
+            height: 0;
+            margin-left: 5px;
+            vertical-align: middle;
+            opacity: 0.3;
+        }
+
+            /* 昇順(asc)の矢印 (▼) */
+            .sort-arrow.asc {
+                border-left: 5px solid transparent;
+                border-right: 5px solid transparent;
+                border-bottom: 5px solid black;
+                opacity: 1;
+            }
+
+            /* 降順(desc)の矢印 (▲) */
+            .sort-arrow.desc {
+                border-left: 5px solid transparent;
+                border-right: 5px solid transparent;
+                border-top: 5px solid black;
+                opacity: 1;
+            }
+
+        .data-mark {
+            text-align: center;
+            font-size: 1.2em;
+        }
+
+        #add-form div {
+            margin-bottom: 10px;
+        }
+
+        #add-form label {
+            display: inline-block;
+            width: 140px;
+            text-align: right;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1 id="form-title">推し登録</h1>
+
+    <form id="add-form">
+        <input type="hidden" id="edit-id" name="edit_id">
+        <div>
+            <label>名前:</label>
+            <input type="text" name="name" required>
+        </div>
+        <div>
+            <label>推しマーク:</label> <input type="text" name="oshi_mark">
+        </div>
+        <div>
+            <label>所属:</label>
+            <input type="text" name="affiliation">
+        </div>
+        <div>
+            <label>Youtube URL:</label>
+            <input type="url" name="youtube_url">
+        </div>
+        <div>
+            <label>Twitter(X) URL:</label>
+            <input type="url" name="twitter_url">
+        </div>
+        <button type="submit" id="submit-btn">登録</button>
+        <button type="button" id="cancel-btn" style="display: none;">キャンセル</button>
+    </form>
+
+    <hr>
+
+    <h1>推し一覧</h1>
+
+    <input type="search" id="search-input" placeholder="名前 or 所属 or 推しマークで検索">
+    <table border="1">
+        <thead>
+            <tr>
+                <th data-sort-key="name" data-sort-order="asc">
+                    名前 <span class="sort-arrow asc"></span>
+                </th>
+                <th data-sort-key="oshi_mark">
+                    推しマーク <span class="sort-arrow"></span>
+                </th>
+                <th data-sort-key="affiliation">
+                    所属 <span class="sort-arrow"></span>
+                </th>
+                <th>Youtube</th>
+                <th>Twitter(X)</th>
+                <th>編集</th>
+                <th>削除</th>
+            </tr>
+        </thead>
+        <tbody id="talent-list">
+            {% for talent in talents %}
+            <tr>
+                <td class="data-name">{{ talent.name }}</td>
+                <td class="data-mark">{{ talent.oshi_mark }}</td>
+                <td class="data-aff">{{ talent.affiliation }}</td>
+                <td class="data-yt"><a href="{{ talent.youtube_url }}" target="_blank" class="url-link">{{ talent.youtube_url }}</a></td>
+                <td class="data-tw"><a href="{{ talent.twitter_url }}" target="_blank" class="url-link">{{ talent.twitter_url }}</a></td>
+                <td><button class="edit-btn" data-id="{{ talent.id }}">編集</button></td>
+                <td><button class="delete-btn" data-id="{{ talent.id }}">削除</button></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // 要素の取得
+            const form = document.getElementById('add-form');
+            const talentList = document.getElementById('talent-list');
+            const searchInput = document.getElementById('search-input');
+            const tableHeader = document.querySelector('table thead');
+            const formTitle = document.getElementById('form-title');
+            const submitBtn = document.getElementById('submit-btn');
+            const cancelBtn = document.getElementById('cancel-btn');
+            const editIdField = document.getElementById('edit-id');
+
+            // フォームを初期状態に戻す
+            function resetForm() {
+                form.reset();
+                editIdField.value = '';
+                formTitle.textContent = 'タレント登録';
+                submitBtn.textContent = '登録';
+                cancelBtn.style.display = 'none';
+            }
+
+            // 1行分のテーブルの作成
+            function createTalentRowHTML(talent) {
+                return `
+                        <td class="data-name">${talent.name}</td>
+                        <td class="data-mark">${talent.oshi_mark || ''}</td> <td class="data-aff">${talent.affiliation || ''}</td>
+                        <td class="data-yt"><a href="${talent.youtube_url || ''}" target="_blank" class="url-link">${talent.youtube_url || ''}</a></td>
+                        <td class="data-tw"><a href="${talent.twitter_url || ''}" target="_blank" class="url-link">${talent.twitter_url || ''}</a></td>
+                        <td><button class="edit-btn" data-id="${talent.id}">編集</button></td>
+                        <td><button class="delete-btn" data-id="${talent.id}">削除</button></td>
+                    `;
+            }
+
+            // 登録・更新
+            form.addEventListener('submit', (event) => {
+                event.preventDefault();
+                const formData = new FormData(form);
+                const talentId = editIdField.value;
+
+                // talentIDの有無で新規か更新か分岐
+                let url = talentId ? `/update/${talentId}` : '/add';
+
+                // fetch APIを使ってサーバーに非同期リクエストを送信
+                fetch(url, { method: 'POST', body: formData })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'error') {
+                            alert('処理に失敗しました: ' + data.message); return;
+                        }
+                        if (talentId) {
+                            // IDを使って、更新対象の行(<tr>)を見つけ、書き換え
+                            const row = talentList.querySelector(`button.edit-btn[data-id="${talentId}"]`).closest('tr');
+                            if (row) { row.innerHTML = createTalentRowHTML(data); }
+                        } else {
+                            // 新しい <tr> 要素を作成
+                            const newRow = document.createElement('tr');
+                            newRow.innerHTML = createTalentRowHTML(data);
+                            talentList.appendChild(newRow);
+                        }
+                        // フォームの初期化
+                        resetForm();
+
+                        // 登録/更新後、現在のソートを再適用
+                        applyCurrentSort();
+                    })
+                    .catch(error => console.error('エラー:', error));
+            });
+
+            // 一覧クリック時
+            talentList.addEventListener('click', (event) => {
+                // 削除ボタン
+                if (event.target.classList.contains('delete-btn')) {
+                    const talentId = event.target.dataset.id;
+                    if (!confirm(`ID: ${talentId} を本当に削除しますか？`)) { return; }
+
+                    // サーバーの削除エンドポイントにDELETEリクエストを送信
+                    fetch(`/delete/${talentId}`, { method: 'DELETE' })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                event.target.closest('tr').remove();
+                            } else { alert('削除に失敗しました: ' + data.message); }
+                        });
+                }
+                // 編集ボタン
+                else if (event.target.classList.contains('edit-btn')) {
+                    const row = event.target.closest('tr');
+                    const talentId = event.target.dataset.id;
+
+                    // 行からデータを取得
+                    form.name.value = row.querySelector('.data-name').textContent;
+                    form.oshi_mark.value = row.querySelector('.data-mark').textContent;
+                    form.affiliation.value = row.querySelector('.data-aff').textContent;
+
+                    // URLは <a> タグの href 属性から取得
+                    const yt_href = row.querySelector('.data-yt a').href;
+                    const tw_href = row.querySelector('.data-tw a').href;
+
+                    // 空のリンクの場合は空文字に補正
+                    form.youtube_url.value = (yt_href.endsWith('/')) ? '' : yt_href;
+                    form.twitter_url.value = (tw_href.endsWith('/')) ? '' : tw_href;
+
+                    // フォームを編集モードに変更
+                    editIdField.value = talentId;
+                    formTitle.textContent = 'タレント編集 (ID: ' + talentId + ')';
+                    submitBtn.textContent = '更新';
+                    cancelBtn.style.display = 'inline';
+                    form.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+
+            // キャンセルボタン
+            cancelBtn.addEventListener('click', () => { resetForm(); });
+
+            // 検索ボックス入力時
+            searchInput.addEventListener('input', (event) => {
+                const term = event.target.value;
+
+                // サーバーの検索エンドポイントにリクエスト
+                fetch(`/search?q=${term}`)
+                    .then(response => response.json())
+                    .then(talents => {
+                        talentList.innerHTML = '';
+                        talents.forEach(talent => {
+                            const newRow = document.createElement('tr');
+                            newRow.innerHTML = createTalentRowHTML(talent);
+                            talentList.appendChild(newRow);
+                        });
+                        // 検索結果に対しても、現在のソート順を適用
+                        applyCurrentSort();
+                    });
+            });
+
+            // ソート処理
+            let currentSortKey = 'name'; // デフォルトのソートキー
+            let currentSortOrder = 'asc'; // デフォルトのソート順
+
+            // 現在のソート状態を適用
+            function applyCurrentSort() {
+                // 実際のDOM並べ替え処理を呼び出す
+                sortTable(currentSortKey, currentSortOrder);
+
+                // テーブルヘッダーの矢印表示を更新
+                // 全てのヘッダーからソート関連の表示をリセット
+                tableHeader.querySelectorAll('th[data-sort-key]').forEach(h => {
+                    h.removeAttribute('data-sort-order');
+                    h.querySelector('.sort-arrow').className = 'sort-arrow';
+                });
+
+                // 現在アクティブなヘッダー要素を取得
+                const activeTh = tableHeader.querySelector(`th[data-sort-key="${currentSortKey}"]`);
+                if (activeTh) {
+                    activeTh.dataset.sortOrder = currentSortOrder;
+                    activeTh.querySelector('.sort-arrow').classList.add(currentSortOrder);
+                }
+            }
+
+            // テーブルヘッダークリック時のイベント
+            tableHeader.addEventListener('click', (event) => {
+                const th = event.target.closest('th[data-sort-key]');
+                if (!th) return;
+
+                const newSortKey = th.dataset.sortKey;
+
+                if (newSortKey === currentSortKey) {
+                    // 同じキーなら順序を反転
+                    currentSortOrder = (currentSortOrder === 'asc') ? 'desc' : 'asc';
+                } else {
+                    // 新しいキーなら昇順にリセット
+                    currentSortKey = newSortKey;
+                    currentSortOrder = 'asc';
+                }
+                // 新しいソート状態をテーブルに適用
+                applyCurrentSort();
+            });
+
+            // テーブルをソートする本体関数
+            function sortTable(sortKey, sortOrder) {
+                const rows = Array.from(talentList.querySelectorAll('tr'));
+
+                // ソートキーに応じて、比較対象となるセルのCSSクラス名を決定
+                let cellClass = '.data-name';
+                if (sortKey === 'oshi_mark') {
+                    cellClass = '.data-mark';
+                } else if (sortKey === 'affiliation') {
+                    cellClass = '.data-aff';
+                }
+
+                // Array.sort() を使って行の配列を並べ替える
+                rows.sort((rowA, rowB) => {
+                    const textA = rowA.querySelector(cellClass).textContent.toLowerCase();
+                    const textB = rowB.querySelector(cellClass).textContent.toLowerCase();
+                    if (textA < textB) return sortOrder === 'asc' ? -1 : 1;
+                    if (textA > textB) return sortOrder === 'asc' ? 1 : -1;
+                    return 0;
+                });
+                // 再度 <tbody> (talentList) に追加し直す
+                rows.forEach(row => { talentList.appendChild(row); });
+            }
+        });
+    </script>
+</body>
+</html>
