@@ -71,7 +71,7 @@ This project is licensed under the MIT License.
 * **データ連携:**
     フロントエンドとバックエンドの連携は、すべて **JSON形式** のデータを介して行われます。これにより、フロントとバックエンドを疎結合に保ち、将来的な拡張性（例えば、React/Vueへの載せ替え）も考慮した設計になっています。
 ### 2. Vanilla JSによるSPA風UIの実装
-ReactやVue.jsのようなフレームワークに頼らず、**あえて素のJavaScript (Vanilla JS)**と`Fetch API` を使うことで、JavaScriptのコアな能力（DOM操作、非同期通信、イベントハンドリング）を深く理解することに挑戦しました。
+ReactやVue.jsのようなフレームワークに頼らず、あえて素のJavaScript (Vanilla JS)と`Fetch API` を使うことで、JavaScriptのコアな能力（DOM操作、非同期通信、イベントハンドリング）を深く理解することに挑戦しました。
 * **非同期処理:** フォームの送信や削除ボタンのクリック時に、ページ全体をリロードするのではなく、`fetch` でバックエンドAPIと通信し、返ってきたJSONを元に `createTalentRowHTML` 関数でDOM（テーブルの行）を動的に書き換えています。
 * **フォームのステート管理:** 新規登録フォームと編集フォームを共通化し、JavaScript側で「編集モード」の内部状態を持つことで、UI（ボタンのテキストなど）を切り替えるロジックを実装しました。
 ### 3. READMEジェネレータの活用
