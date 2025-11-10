@@ -174,7 +174,7 @@
             function resetForm() {
                 form.reset();
                 editIdField.value = '';
-                formTitle.textContent = 'タレント登録';
+                formTitle.textContent = '推し登録';
                 submitBtn.textContent = '登録';
                 cancelBtn.style.display = 'none';
             }
@@ -262,7 +262,7 @@
 
                     // フォームを編集モードに変更
                     editIdField.value = talentId;
-                    formTitle.textContent = 'タレント編集 (ID: ' + talentId + ')';
+                    formTitle.textContent = '推し編集 (ID: ' + talentId + ')';
                     submitBtn.textContent = '更新';
                     cancelBtn.style.display = 'inline';
                     form.scrollIntoView({ behavior: 'smooth' });
@@ -360,4 +360,5 @@
         });
     </script>
 </body>
+
 </html>
